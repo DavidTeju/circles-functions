@@ -1,7 +1,11 @@
-const functions = require("firebase-functions");
+import {onRequest} from "firebase-functions/v2/https";
+import express from "express";
 
-// first http request
-exports.helloWorld = functions.https.onRequest((request, response) => {
-  response.send("Hello from Circles!");
+
+const app = express();
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.get("/circles/:username/feed", (req, res) => {
 });
 
+exports.helloWorld = onRequest(app);

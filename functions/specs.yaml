@@ -1,0 +1,327 @@
+openapi: '3.0.3'
+info:
+  version: '1.0.0'
+  title: 'Circles API'
+  description: Circles API
+
+servers:
+  - url: 'circles.dev/api/v1' # TODO: we'll put our server here
+
+paths:
+  /circles/{username}/feed:
+    parameters:
+      - $ref: '#/components/parameters/usernamePathParam'
+    get:
+      summary: Get a feed of posts for user's circle
+      responses:
+        '200':
+          description: The list of posts from user's circle
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        404:
+          description: No user found found for the provided `username`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          $ref: '#/components/responses/ServerError'
+
+  /profiles/{username}/feed:
+    parameters:
+      - $ref: '#/components/parameters/usernamePathParam'
+    get:
+      summary: Get profile feed for user
+      responses:
+        '200':
+          description: The list of this users's posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Post'
+        404:
+          description: No user found found for the provided `username`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          $ref: '#/components/responses/ServerError'
+
+  /posts/{post-id}/like:
+    parameters:
+      - name: post-id
+        description: Post id for post to like
+        in: path
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Like a post
+      parameters:
+        - $ref: '#/components/parameters/usernameQueryParam'
+      responses:
+        200:
+          description: successfully toggled like on post for user
+        404:
+          description: No user or post found for corresponding id's
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          $ref: '#/components/responses/ServerError'
+
+  /posts/{username}/new:
+    post:
+      summary: Upload a new post
+      parameters:
+        - $ref: '#/components/parameters/usernamePathParam'
+      responses:
+        500:
+          $ref: '#/components/responses/ServerError'
+        200:
+          description: The post-id for the successfully uploaded post
+          content:
+            application/json:
+              schema:
+                type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - caption
+                - num-media-files
+              properties:
+                caption:
+                  type: string
+                num-media-files:
+                  type: integer
+                  minimum: 0
+                  maximum: 10
+                # Why field names and not just an array of media files?
+                # Because the dart openapi generator doesn't recognize arrays of files properly
+                m0:
+                  description: The first image/video binary data to upload as part of the new post. Only accessed if num-media-files >=1.
+                  type: string
+                  format: binary
+                m1:
+                  description: The second image/video binary data. Only accessed if num-media-files >=2.
+                  type: string
+                  format: binary
+                m2:
+                  description: The third image/video binary data. Only accessed if num-media-files >=3.
+                  type: string
+                  format: binary
+                m3:
+                  description: The fourth image/video binary data. Only accessed if num-media-files >=4.
+                  type: string
+                  format: binary
+                m4:
+                  description: The fifth image/video binary data. Only accessed if num-media-files >=5.
+                  type: string
+                  format: binary
+                m5:
+                  description: The sixth image/video binary data. Only accessed if num-media-files >=6.
+                  type: string
+                  format: binary
+                m6:
+                  description: The seventh image/video binary data. Only accessed if num-media-files >=7.
+                  type: string
+                  format: binary
+                m7:
+                  description: The eighth image/video binary data. Only accessed if num-media-files >=8.
+                  type: string
+                  format: binary
+                m8:
+                  description: The ninth image/video binary data. Only accessed if num-media-files >=9.
+                  type: string
+                  format: binary
+                m9:
+                  description: The tenth image/video binary data. Only accessed if num-media-files >=10.
+                  type: string
+                  format: binary
+
+  /profiles/create:
+    post:
+      responses:
+        200:
+          description: successfully created profile/user
+        409:
+          description: username or uid already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - uid
+                - username
+              properties:
+                uid:
+                  description: uid from firebase auth
+                  type: string
+                username:
+                  type: string
+                email-address:
+                  type: string
+                  format: email-address
+                phone-number:
+                  type: string
+                  format: phone-number
+
+  /profiles/{username}/delete:
+    parameters:
+      - $ref: "#/components/parameters/usernamePathParam"
+    post:
+      summary: Delete user profile/data
+      description: Must delete all user data and maintain a "null user" object for cleaning residual references.
+      responses:
+        200:
+          description: successfully deleted profile/user data
+        404:
+          description: No existing user found with this uid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        410:
+          description: user with uid already deleted. Value of user must be "null user"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /profiles/{username}/exists:
+    parameters:
+      - $ref: "#/components/parameters/usernamePathParam"
+    get:
+      summary: Check if user exists
+      responses:
+        200:
+          description: successfully returned boolean indicating if user exists
+          content:
+            application/json:
+              schema:
+                type: boolean
+        500:
+          $ref: "#/components/responses/ServerError"
+
+  /profiles/friend:
+    parameters:
+      - name: uid1
+        description: First user
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: uid2
+        description: Second user
+        in: query
+        required: true
+        schema:
+          type: string
+    post:
+      summary: Create friendship between two users
+      responses:
+        200:
+          description: successfully added friends
+        404:
+          description: One or Both users not found. Error message must identify which user or both is missing.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        500:
+          $ref: '#/components/responses/ServerError'
+
+
+components:
+  responses:
+    ServerError:
+      description: Unexpected/unhandled error/exception
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnauthorizedError:
+      description: Access token is missing or invalid
+
+  parameters:
+    usernamePathParam:
+      name: username
+      description: username of user for which to get post feed
+      in: path
+      required: true
+      schema:
+        type: string
+        example: egreen20
+    usernameQueryParam:
+      name: username
+      description: username of user for which to get post feed
+      in: query
+      required: true
+      schema:
+        type: string
+        example: egreen20
+
+  schemas:
+    Post:
+      type: object
+      properties:
+        post-id:
+          type: string
+        username:
+          type: string
+        caption:
+          type: string
+        media-array:
+          type: array
+          example: [ 'https://firebasestorage.googleapis.com/v0/b/circles-test-dev.appspot.com/o/images%2Ftest.jpg?alt=media&token=47e4231d-e736-4f95-af4f-ecff7a752d7c' ]
+          description: list of links to each media file (photo/video)
+          items:
+            type: string
+            format: uri
+        num_likes:
+          type: integer
+        time_stamp:
+          type: string
+          format: date-time
+      required:
+        - post-id
+        - username
+        - caption
+        - media-array
+        - time_stamp
+        - num_likes
+    Error:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          description: A human readable error message
+          type: string
+  securitySchemes:
+    firebase-token:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      # TODO: for Ethan, read https://firebase.google.com/docs/auth/admin/verify-id-tokens for how to verify the token on the server side
+
+security:
+  - firebase-token: [ ]
